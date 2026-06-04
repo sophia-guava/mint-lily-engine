@@ -258,7 +258,7 @@ function CreatorIntake({ onAdded, setView, creators }: { onAdded: () => void; se
             <div className="grid-2">
               <div className="form-group"><label className="label">Platform</label>
                 <select className="select" value={form.platform} onChange={e => f('platform', e.target.value)}>
-                  <option value="instagram">Instagram</option><option value="tiktok">TikTok</option><option value="youtube">YouTube</option>
+                  <option value="instagram">Instagram</option><option value="tiktok">TikTok</option><option value="youtube">YouTube</option><option value="facebook">Facebook</option>
                 </select>
               </div>
               <div className="form-group"><label className="label">City</label><input className="input" placeholder="Nashville, TN" value={form.city} onChange={e => f('city', e.target.value)} /></div>

@@ -9,7 +9,7 @@ export type Creator = {
   id: string
   name: string
   handle: string
-  platform: 'instagram' | 'tiktok' | 'youtube'
+  platform: 'instagram' | 'tiktok' | 'youtube' | 'facebook'
   city: string
   followers: number
   engagement_rate: number
