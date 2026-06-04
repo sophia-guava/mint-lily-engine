@@ -625,11 +625,12 @@ function ManageCampaigns({ campaigns, onUpdate }: { campaigns: Campaign[]; onUpd
   const handleAdd = async () => {
     if (!form.name || !form.deliverables || !form.deadline) return
     setSaving(true)
-    await supabase.from('campaigns').insert({
+    const { error } = await supabase.from('campaigns').insert({
       name: form.name, type: form.type, occasion: form.occasion,
       city: form.city || null, budget: form.budget ? parseFloat(form.budget) : null,
       deliverables: form.deliverables, deadline: form.deadline, status: form.status
     })
+    if (error) console.error('Campaign insert error:', error)
     await onUpdate()
     setForm(empty)
     setSaving(false)
