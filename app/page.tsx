@@ -88,16 +88,27 @@ function Dashboard({ creators, campaigns, setView }: { creators: Creator[]; camp
   const approved = creators.filter(c => c.approved).length
   const active = creators.filter(c => c.status === 'active').length
 
-  // Program-level financial calculations
-  const totalSpend = creators.reduce((sum, c) => sum + (c.gifting_cost || 0) + (c.cash_paid || 0), 0)
-  const totalRevenue = creators.reduce((sum, c) => sum + (c.revenue_generated || 0), 0)
-  const totalConversions = creators.reduce((sum, c) => sum + (c.promo_uses || 0), 0)
-  const programROI = totalSpend > 0 ? ((totalRevenue - totalSpend) / totalSpend * 100) : 0
-  const blendedCAC = totalConversions > 0 ? totalSpend / totalConversions : 0
-  const topROICreator = creators
-    .filter(c => (c.gifting_cost + c.cash_paid) > 0)
-    .map(c => ({ name: c.name, roi: ((c.revenue_generated - c.gifting_cost - c.cash_paid) / (c.gifting_cost + c.cash_paid) * 100) }))
-    .sort((a, b) => b.roi - a.roi)[0]
+  // Forward-looking projections based on active campaigns + creators
+  const activeCampaigns = campaigns.filter(c => c.status === 'active')
+  const approvedCreators = creators.filter(c => c.approved)
+  const pendingCreators = creators.filter(c => c.status === 'pending' || c.status === 'contacted')
+
+  const projectedGiftingSpend = activeCampaigns
+    .filter(c => c.type === 'gifting' || c.type === 'product_launch')
+    .length * approvedCreators.length * 55
+
+  const projectedPaidSpend = activeCampaigns
+    .filter(c => c.type === 'paid')
+    .reduce((sum, c) => sum + (c.budget || 0), 0)
+
+  const totalProjectedSpend = projectedGiftingSpend + projectedPaidSpend
+
+  const estTotalReach = approvedCreators.reduce((sum, c) => sum + c.followers, 0)
+  const estTotalEngagements = approvedCreators.reduce((sum, c) => sum + (c.followers * c.engagement_rate / 100), 0)
+  const projectedCPM = estTotalReach > 0 && totalProjectedSpend > 0
+    ? (totalProjectedSpend / estTotalReach * 1000) : 0
+  const giftingVsPaidSplit = totalProjectedSpend > 0
+    ? Math.round(projectedGiftingSpend / totalProjectedSpend * 100) : 0
 
   return (
     <div>
@@ -140,9 +151,9 @@ function Dashboard({ creators, campaigns, setView }: { creators: Creator[]; camp
             <div className="card-body">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
                 {[
-                  { label: 'Total Spend', value: `$${totalSpend.toLocaleString()}`, sub: 'gifting + cash', color: 'var(--ink)' },
-                  { label: 'Revenue Generated', value: `$${totalRevenue.toLocaleString()}`, sub: 'from promo codes', color: totalRevenue > 0 ? '#7a9e87' : 'var(--ink-muted)' },
-                  { label: 'Program ROI', value: totalSpend > 0 ? `${programROI.toFixed(0)}%` : '—', sub: 'return on spend', color: programROI > 0 ? '#7a9e87' : programROI < 0 ? '#c9706a' : 'var(--ink-muted)' },
+                  { label: 'Projected Spend', value: totalProjectedSpend > 0 ? `$${totalProjectedSpend.toLocaleString()}` : '—', sub: `${activeCampaigns.length} active campaigns`, color: 'var(--ink)' },
+                  { label: 'Est. Total Reach', value: estTotalReach > 1000 ? `${(estTotalReach/1000).toFixed(0)}K` : estTotalReach > 0 ? estTotalReach.toString() : '—', sub: 'across approved creators', color: '#7a9e87' },
+                  { label: 'Projected CPM', value: projectedCPM > 0 ? `$${projectedCPM.toFixed(2)}` : '—', sub: 'cost per 1K impressions', color: 'var(--ink)' },
                 ].map(item => (
                   <div key={item.label} style={{ textAlign: 'center', padding: '12px 8px', background: 'var(--parchment)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
                     <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 400, color: item.color, lineHeight: 1 }}>{item.value}</div>
@@ -152,22 +163,17 @@ function Dashboard({ creators, campaigns, setView }: { creators: Creator[]; camp
                 ))}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
-                <span style={{ color: 'var(--ink-muted)' }}>Blended CAC</span>
-                <span style={{ fontWeight: 500 }}>{blendedCAC > 0 ? `$${blendedCAC.toFixed(2)}/customer` : '—'}</span>
+                <span style={{ color: 'var(--ink-muted)' }}>Est. Engagements</span>
+                <span style={{ fontWeight: 500 }}>{estTotalEngagements > 1000 ? `${(estTotalEngagements/1000).toFixed(1)}K` : Math.round(estTotalEngagements) > 0 ? Math.round(estTotalEngagements).toString() : '—'}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
-                <span style={{ color: 'var(--ink-muted)' }}>Total Conversions</span>
-                <span style={{ fontWeight: 500 }}>{totalConversions > 0 ? totalConversions.toLocaleString() : '—'}</span>
+                <span style={{ color: 'var(--ink-muted)' }}>Gifting vs Paid Split</span>
+                <span style={{ fontWeight: 500 }}>{giftingVsPaidSplit > 0 ? `${giftingVsPaidSplit}% gifting / ${100 - giftingVsPaidSplit}% paid` : '—'}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: 13 }}>
-                <span style={{ color: 'var(--ink-muted)' }}>Top ROI Creator</span>
-                <span style={{ fontWeight: 500, color: '#7a9e87' }}>{topROICreator ? `${topROICreator.name} (${topROICreator.roi.toFixed(0)}%)` : '—'}</span>
+                <span style={{ color: 'var(--ink-muted)' }}>Creators in Pipeline</span>
+                <span style={{ fontWeight: 500 }}>{approvedCreators.length} approved · {pendingCreators.length} pending</span>
               </div>
-              {totalSpend === 0 && (
-                <div style={{ fontSize: 11, color: 'var(--ink-muted)', marginTop: 12, fontStyle: 'italic' }}>
-                  Log spend and revenue in the Scoring Engine to see financials here.
-                </div>
-              )}
             </div>
           </div>
         </div>
