@@ -208,28 +208,16 @@ function Dashboard({ creators, campaigns, setView }: { creators: Creator[]; camp
 
 // ── CREATOR INTAKE ─────────────────────────────────────────
 function CreatorIntake({ onAdded, setView, creators }: { onAdded: () => void; setView: (v: View) => void; creators: Creator[] }) {
-  const [form, setForm] = useState({ name: '', handle: '', platform: 'instagram', city: '', followers: '', avg_likes: '', avg_comments: '', bio: '', recent_captions: '' })
+  const [form, setForm] = useState({ name: '', handle: '', platform: 'instagram', city: '', followers: '', engagement_rate: '', bio: '', recent_captions: '' })
   const [saving, setSaving] = useState(false)
   const f = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }))
-
-  // Auto-calculate engagement rate from likes + comments + followers
-  const engagementRate = (() => {
-    const followers = parseInt(form.followers) || 0
-    const likes = parseInt(form.avg_likes) || 0
-    const comments = parseInt(form.avg_comments) || 0
-    if (!followers || (!likes && !comments)) return 0
-    return ((likes + comments) / followers * 100)
-  })()
-
-  const engagementLabel = engagementRate === 0 ? '' : engagementRate < 1 ? '⚠ Low' : engagementRate < 3 ? 'Average' : engagementRate < 6 ? '✓ Good' : '✓ Excellent'
-  const engagementColor = engagementRate === 0 ? 'var(--ink-muted)' : engagementRate < 1 ? '#c9706a' : engagementRate < 3 ? '#c9a84c' : '#7a9e87'
 
   const handleAdd = async () => {
     if (!form.name || !form.handle) return
     setSaving(true)
-    await supabase.from('creators').insert({ name: form.name, handle: form.handle, platform: form.platform, city: form.city, followers: parseInt(form.followers) || 0, engagement_rate: parseFloat(engagementRate.toFixed(2)), bio: form.bio, recent_captions: form.recent_captions, status: 'pending', approved: false })
+    await supabase.from('creators').insert({ name: form.name, handle: form.handle, platform: form.platform, city: form.city, followers: parseInt(form.followers) || 0, engagement_rate: parseFloat(form.engagement_rate) || 0, bio: form.bio, recent_captions: form.recent_captions, status: 'pending', approved: false })
     await onAdded()
-    setForm({ name: '', handle: '', platform: 'instagram', city: '', followers: '', avg_likes: '', avg_comments: '', bio: '', recent_captions: '' })
+    setForm({ name: '', handle: '', platform: 'instagram', city: '', followers: '', engagement_rate: '', bio: '', recent_captions: '' })
     setSaving(false)
     setView('scoring')
   }
@@ -264,23 +252,9 @@ function CreatorIntake({ onAdded, setView, creators }: { onAdded: () => void; se
               <div className="form-group"><label className="label">City</label><input className="input" placeholder="Nashville, TN" value={form.city} onChange={e => f('city', e.target.value)} /></div>
             </div>
 
-            {/* Engagement Calculator */}
-            <div style={{ background: 'var(--parchment)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '14px 16px', marginBottom: 16 }}>
-              <div style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: 10, fontWeight: 500 }}>Engagement Calculator</div>
-              <div className="grid-2" style={{ marginBottom: 8 }}>
-                <div className="form-group" style={{ marginBottom: 0 }}><label className="label">Followers</label><input className="input" type="number" placeholder="12000" value={form.followers} onChange={e => f('followers', e.target.value)} /></div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <div className="form-group" style={{ marginBottom: 0, flex: 1 }}><label className="label">Avg Likes</label><input className="input" type="number" placeholder="480" value={form.avg_likes} onChange={e => f('avg_likes', e.target.value)} /></div>
-                  <div className="form-group" style={{ marginBottom: 0, flex: 1 }}><label className="label">Avg Comments</label><input className="input" type="number" placeholder="32" value={form.avg_comments} onChange={e => f('avg_comments', e.target.value)} /></div>
-                </div>
-              </div>
-              {engagementRate > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                  <span style={{ fontSize: 20, fontFamily: 'Cormorant Garamond, serif', fontWeight: 500, color: engagementColor }}>{engagementRate.toFixed(1)}%</span>
-                  <span style={{ fontSize: 11, color: engagementColor, fontWeight: 500 }}>{engagementLabel}</span>
-                  <span style={{ fontSize: 11, color: 'var(--ink-muted)', marginLeft: 'auto' }}>engagement rate</span>
-                </div>
-              )}
+            <div className="grid-2">
+              <div className="form-group"><label className="label">Followers</label><input className="input" type="number" placeholder="12000" value={form.followers} onChange={e => f('followers', e.target.value)} /></div>
+              <div className="form-group"><label className="label">Engagement Rate (%)</label><input className="input" type="number" placeholder="4.2" step="0.1" value={form.engagement_rate} onChange={e => f('engagement_rate', e.target.value)} /></div>
             </div>
 
             <div className="form-group"><label className="label">Bio</label><textarea className="textarea" placeholder="Paste their bio or describe their content focus..." value={form.bio} onChange={e => f('bio', e.target.value)} /></div>
