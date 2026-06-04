@@ -675,7 +675,7 @@ function ManageCampaigns({ campaigns, onUpdate }: { campaigns: Campaign[]; onUpd
                 <label className="label">City <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'var(--ink-muted)' }}>(optional — leave blank for national)</span></label>
                 <input className="input" placeholder="Leave blank for product launch" value={form.city} onChange={e => f('city', e.target.value)} />
               </div>
-              <div className="form-group"><label className="label">Budget per Creator ($)</label><input className="input" type="number" placeholder="Leave blank for gifting" value={form.budget} onChange={e => f('budget', e.target.value)} /></div>
+              <div className="form-group"><label className="label">Total Campaign Budget ($)</label><input className="input" type="number" placeholder="Leave blank for gifting" value={form.budget} onChange={e => f('budget', e.target.value)} /></div>
             </div>
             <div className="form-group"><label className="label">Deliverables</label><input className="input" placeholder="1 Instagram Reel + 2 Stories" value={form.deliverables} onChange={e => f('deliverables', e.target.value)} /></div>
             <div className="grid-2">
